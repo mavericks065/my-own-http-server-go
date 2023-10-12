@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -34,6 +35,9 @@ func main() {
 
 	req := string(buf[:requestBytes])
 	fmt.Println("Server Request decoded: ", req)
+
+	requestParts := strings.Split(req, " ")
+	fmt.Println("Server Request parts split: ", requestParts)
 
 	serverResponse := []byte("HTTP/1.1 200 OK\r\n\r\n")
 	_, err = connection.Write(serverResponse)
