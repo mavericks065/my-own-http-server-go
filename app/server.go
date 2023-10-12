@@ -36,10 +36,15 @@ func main() {
 	req := string(buf[:requestBytes])
 	fmt.Println("Server Request decoded: ", req)
 
-	requestParts := strings.Split(req, " ")
-	fmt.Println("Server Request parts split: ", requestParts)
+	requestPath := strings.Split(req, " ")[1]
+	fmt.Println("Request path: ", requestPath)
 
-	serverResponse := []byte("HTTP/1.1 200 OK\r\n\r\n")
+	var serverResponse []byte
+	if requestPath != "/" {
+		serverResponse = []byte("HTTP/1.1 404 Not Found response\r\n\r\n")
+	} else {
+		serverResponse = []byte("HTTP/1.1 200 OK\r\n\r\n")
+	}
 	_, err = connection.Write(serverResponse)
 	if err != nil {
 		fmt.Println("Error writing response: ", err.Error())
