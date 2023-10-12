@@ -17,15 +17,30 @@ func main() {
 	}
 
 	connection, err := l.Accept()
+	defer connection.Close()
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
-	defer connection.Close()
-	_, err = connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+
+	fmt.Println("data received")
+
+	buf := make([]byte, 1024)
+	requestBytes, err := connection.Read(buf)
 	if err != nil {
-		fmt.Println("Error writing to HTTP connection: ", err.Error())
+		fmt.Println("Error reading data: ", err.Error())
 		os.Exit(1)
 	}
+
+	req := string(buf[:requestBytes])
+	fmt.Println("Server Request decoded: ", req)
+
+	serverResponse := []byte("HTTP/1.1 200 OK\r\n\r\n")
+	_, err = connection.Write(serverResponse)
+	if err != nil {
+		fmt.Println("Error writing response: ", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("data sent")
 	connection.Close()
 }
