@@ -17,15 +17,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	connection, err := l.Accept()
-	defer connection.Close()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+	for {
+		connection, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+		go handleConnection(connection)
 	}
+}
 
-	fmt.Println("data received")
-
+func handleConnection(connection net.Conn) {
+	defer connection.Close()
 	buf := make([]byte, 1024)
 	requestBytes, err := connection.Read(buf)
 	if err != nil {
@@ -34,23 +37,19 @@ func main() {
 	}
 
 	req := string(buf[:requestBytes])
-	fmt.Println("SERVER REQUEST DECODED: ", req)
 
 	responseContent := handleRequest(req)
 
-	fmt.Println("RESPONSE CONTENT: ", strings.Join(responseContent, ""))
 	serverResponse := []byte(strings.Join(responseContent, ""))
 	_, err = connection.Write(serverResponse)
 	if err != nil {
 		fmt.Println("Error writing response: ", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println("data sent")
 	connection.Close()
 }
 
 func handleRequest(req string) []string {
-	fmt.Println("IDEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAS")
 	requestRows := strings.Split(req, "\r\n")
 
 	requestPath := strings.Split(requestRows[0], " ")[1]
