@@ -47,7 +47,9 @@ func handleConnection(connection net.Conn) {
 	var responseContent []string
 
 	if strings.HasPrefix(req, "GET") {
-		responseContent = handleRequest(req)
+		responseContent = handleGetRequest(req)
+	} else if strings.HasPrefix(req, "POST") {
+		responseContent = handlePostRequest(req)
 	}
 
 	serverResponse := []byte(strings.Join(responseContent, ""))
@@ -61,9 +63,32 @@ func handleConnection(connection net.Conn) {
 
 var CRLF = "\r\n"
 
-func handleRequest(req string) []string {
+func handlePostRequest(req string) []string {
 	requestRows := strings.Split(req, CRLF)
+	requestPath := strings.Split(requestRows[0], " ")[1]
+	uriParts := strings.Split(requestPath, "/")
+	header := "HTTP/1.1 201 OK"
+	contentType := "Content-Type: text/plain"
+	var responseContent []string
+	if uriParts[1] == "files" {
+		writeFile(requestRows, directory+uriParts[2])
+		responseContent = []string{header, CRLF, CRLF, contentType}
+	}
+	return responseContent
+}
 
+func writeFile(requestRows []string, filePath string) {
+	requestBody := strings.Join(requestRows[6:], " ")
+	fileContent := []byte(requestBody)
+	err := os.WriteFile(filePath, fileContent, 0644)
+	if err != nil {
+		fmt.Println("Error while writing file content: ", err.Error())
+		panic(err)
+	}
+}
+
+func handleGetRequest(req string) []string {
+	requestRows := strings.Split(req, CRLF)
 	requestPath := strings.Split(requestRows[0], " ")[1]
 	uriParts := strings.Split(requestPath, "/")
 	header := "HTTP/1.1 200 OK"
@@ -87,9 +112,6 @@ func handleRequest(req string) []string {
 		contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
 		responseContent = []string{header, CRLF, contentType, CRLF, contentLength, body, CRLF}
 	} else if uriParts[1] == "files" {
-		fmt.Println("FILE TO FIND: ", directory+uriParts[2])
-		_, bla := os.Stat(directory + uriParts[2])
-		fmt.Println("IS FILE PRESENT: ", bla)
 		if _, statErr := os.Stat(directory + uriParts[2]); statErr == nil {
 			contentType = "Content-Type: application/octet-stream"
 			body := readFileContent(uriParts[2])
