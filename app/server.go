@@ -49,21 +49,22 @@ func handleConnection(connection net.Conn) {
 	connection.Close()
 }
 
+var  CRLF := "\r\n"
 func handleRequest(req string) []string {
-	requestRows := strings.Split(req, "\r\n")
+	requestRows := strings.Split(req, CRLF)
 
 	requestPath := strings.Split(requestRows[0], " ")[1]
 	uriParts := strings.Split(requestPath, "/")
-	header := "HTTP/1.1 200 OK\r\n"
-	contentType := "Content-Type: text/plain\r\n"
+	header := "HTTP/1.1 200 OK"
+	contentType := "Content-Type: text/plain"
 	var responseContent []string
 
 	if requestPath == "/" {
-		responseContent = []string{header, "\r\n"}
+		responseContent = []string{header, CRLF, CRLF}
 	} else if uriParts[1] == "echo" {
 		body := strings.TrimPrefix(requestPath, "/echo/")
-		contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
-		responseContent = []string{header, contentType, contentLength, body, "\r\n"}
+		contentLength := fmt.Sprintf("Content-Length: %d", len(body))
+		responseContent = []string{header, CRLF, contentType, CRLF, contentLength, CRLF, CRLF, body, CRLF}
 	} else if uriParts[1] == "user-agent" {
 		var body string
 		for _, row := range requestRows {
@@ -73,10 +74,10 @@ func handleRequest(req string) []string {
 			}
 		}
 		contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
-		responseContent = []string{header, contentType, contentLength, body, "\r\n"}
+		responseContent = []string{header, CRLF, contentType, CRLF, contentLength, body, CRLF}
 	} else {
-		header = "HTTP/1.1 404 Not Found response\r\n\r\n"
-		responseContent = []string{header}
+		header = "HTTP/1.1 404 Not Found response"
+		responseContent = []string{header, CRLF, CRLF}
 	}
 	return responseContent
 }
