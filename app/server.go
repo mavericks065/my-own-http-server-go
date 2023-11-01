@@ -1,15 +1,21 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
 	"strings"
 )
 
+var directory string
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
+
+	flag.StringVar(&directory, "directory", ".", "directory")
+	flag.Parse()
 
 	l, err := net.Listen("tcp", "0.0.0.0:4221")
 	if err != nil {
@@ -38,7 +44,11 @@ func handleConnection(connection net.Conn) {
 
 	req := string(buf[:requestBytes])
 
-	responseContent := handleRequest(req)
+	var responseContent []string
+
+	if strings.HasPrefix(req, "GET") {
+		responseContent = handleRequest(req)
+	}
 
 	serverResponse := []byte(strings.Join(responseContent, ""))
 	_, err = connection.Write(serverResponse)
@@ -49,7 +59,8 @@ func handleConnection(connection net.Conn) {
 	connection.Close()
 }
 
-var  CRLF := "\r\n"
+var CRLF = "\r\n"
+
 func handleRequest(req string) []string {
 	requestRows := strings.Split(req, CRLF)
 
@@ -75,9 +86,36 @@ func handleRequest(req string) []string {
 		}
 		contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
 		responseContent = []string{header, CRLF, contentType, CRLF, contentLength, body, CRLF}
+	} else if uriParts[1] == "files" {
+		fmt.Println("FILE TO FIND: ", directory+uriParts[2])
+		_, bla := os.Stat(directory + uriParts[2])
+		fmt.Println("IS FILE PRESENT: ", bla)
+		if _, statErr := os.Stat(directory + uriParts[2]); statErr == nil {
+			contentType = "Content-Type: application/octet-stream"
+			body := readFileContent(uriParts[2])
+			contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
+			responseContent = []string{header, CRLF, contentType, CRLF, contentLength, body, CRLF}
+		} else {
+			responseContent = build404ResponseContent()
+		}
 	} else {
-		header = "HTTP/1.1 404 Not Found response"
-		responseContent = []string{header, CRLF, CRLF}
+		responseContent = build404ResponseContent()
 	}
+	return responseContent
+}
+
+func readFileContent(filename string) string {
+	fileContent, err := os.ReadFile(directory + filename)
+	if err != nil {
+		fmt.Println("Error while reading file content: ", err.Error())
+		panic(err)
+	}
+	body := string(fileContent)
+	return body
+}
+
+func build404ResponseContent() []string {
+	header := "HTTP/1.1 404 Not Found response"
+	responseContent := []string{header, CRLF, CRLF}
 	return responseContent
 }
