@@ -42,7 +42,6 @@ func HandleGetUserAgent(request Request) Response {
 	contentType := "Content-Type: text/plain"
 
 	body := request.Headers["User-Agent"]
-	contentLength := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
 	return Response{
 		header,
 		contentType,
