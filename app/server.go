@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 )
 
 var directory string
@@ -27,13 +26,6 @@ func main() {
 	}
 }
 
-func handleError(log string, err error) {
-	if err != nil {
-		fmt.Println(log)
-		os.Exit(1)
-	}
-}
-
 func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	buf := make([]byte, 1024)
@@ -42,16 +34,15 @@ func handleConnection(connection net.Conn) {
 
 	req := string(buf[:requestBytes])
 
-	var responseContent []string
-
-	if strings.HasPrefix(req, "GET") {
-		responseContent = HandleGetRequest(req)
-	} else if strings.HasPrefix(req, "POST") {
-		responseContent = HandlePostRequest(req)
-	}
-
-	serverResponse := []byte(strings.Join(responseContent, ""))
+	serverResponse := HandleRequest(req)
 	_, err = connection.Write(serverResponse)
 	handleError("Error writing response: ", err)
 	connection.Close()
+}
+
+func handleError(log string, err error) {
+	if err != nil {
+		fmt.Println(log)
+		os.Exit(1)
+	}
 }
