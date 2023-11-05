@@ -35,7 +35,7 @@ func handleConnection(connection net.Conn) {
 	req := string(buf[:requestBytes])
 
 	serverResponse := HandleRequest(req)
-	_, err = connection.Write(serverResponse)
+	_, err = connection.Write([]byte(serverResponse))
 	handleError("Error writing response: ", err)
 	connection.Close()
 }
